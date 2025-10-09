@@ -1,4 +1,4 @@
-package main
+package safe_paste
 
 import (
 	"encoding/json"
@@ -25,7 +25,7 @@ func loadConfig() Config {
 		return Config{
 			Keywords:        []string{},
 			HostnamePattern: "^xy\\d+[a-z]+\\d*prd$",
-		}
+		}dGG
 	}
 	var cfg Config
 
@@ -82,12 +82,4 @@ func maskText(input string) string {
 	}
 
 	return input
-}
-
-func main() {
-
-	input := "Bağlan 10.20.20.20'ye, xy01dbp339prd'de sorun var. Şirket_sifresi: abc123"
-	fmt.Println("Orijinal:", input)
-	masked := maskText(input)
-	fmt.Println("Maskelenmiş:", masked)
 }
