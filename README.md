@@ -4,7 +4,7 @@
 
 ![SafePaste](https://img.shields.io/badge/Go-1.24-00ADD8?style=flat&logo=go)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
 
 ## ✨ Özellikler
 
@@ -20,10 +20,7 @@
 [Releases](https://github.com/00xryu/SafePaste/releases) sayfasından işletim sisteminize uygun versiyonu indirin:
 
 - **Windows (x64)**: `SafePaste-windows-amd64.zip`
-- **Windows (ARM64)**: `SafePaste-windows-arm64.zip`
 - **Linux (x64)**: `SafePaste-linux-amd64.tar.gz`
-- **macOS (Intel)**: `SafePaste-macos-amd64.tar.gz`
-- **macOS (Apple Silicon)**: `SafePaste-macos-arm64.tar.gz`
 
 ## 🚀 Kullanım
 

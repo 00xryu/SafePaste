@@ -20,10 +20,7 @@ Platformunuza uygun dosyayı seçin:
 | Platform | Dosya | Boyut |
 |----------|-------|-------|
 | Windows (x64) | `SafePaste-windows-amd64.zip` | ~XX MB |
-| Windows (ARM64) | `SafePaste-windows-arm64.zip` | ~XX MB |
 | Linux (x64) | `SafePaste-linux-amd64.tar.gz` | ~XX MB |
-| macOS (Intel) | `SafePaste-macos-amd64.tar.gz` | ~XX MB |
-| macOS (Apple Silicon) | `SafePaste-macos-arm64.tar.gz` | ~XX MB |
 
 ### 🚀 Hızlı Başlangıç
 
