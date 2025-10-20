@@ -1,0 +1,36 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+SafePaste
+SafePaste-*
+
+# Test binaries
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Build artifacts
+build/
+dist/
+release/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work

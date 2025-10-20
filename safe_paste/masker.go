@@ -3,7 +3,8 @@ package safe_paste
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -18,14 +19,25 @@ var (
 	localhostIPs = []string{"127.0.0.1", "localhost", "0.0.0.0", "::1"}
 )
 
-func loadConfig() Config {
-	data, err := ioutil.ReadFile("config.json")
+// getConfigPath exe ile aynı dizinde config.json bulur (portable)
+func getConfigPath() string {
+	exePath, err := os.Executable()
 	if err != nil {
-		fmt.Println("Config load error:", err)
+		return "config.json" // fallback: mevcut dizin
+	}
+	exeDir := filepath.Dir(exePath)
+	return filepath.Join(exeDir, "config.json")
+}
+
+func loadConfig() Config {
+	configPath := getConfigPath()
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		fmt.Println("Config yüklenemedi:", configPath)
 		return Config{
 			Keywords:        []string{},
-			HostnamePattern: "^xy\\d+[a-z]+\\d*prd$",
-		}dGG
+			HostnamePattern: "\\bxy\\d+[a-z]+\\d*prd\\b",
+		}
 	}
 	var cfg Config
 
@@ -33,7 +45,7 @@ func loadConfig() Config {
 	return cfg
 }
 
-func maskText(input string) string {
+func MaskText(input string) string {
 	cfg := loadConfig()
 	hostnameRegex := regexp.MustCompile(cfg.HostnamePattern)
 	ipMap := make(map[string]string)

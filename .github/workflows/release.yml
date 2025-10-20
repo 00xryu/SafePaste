@@ -1,0 +1,119 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*' # v1.0.0, v1.1.0 gibi tag'lerde çalışır
+  workflow_dispatch: # Manuel olarak da çalıştırabilirsin
+
+jobs:
+  build:
+    name: Build SafePaste
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+            output: SafePaste-windows-amd64.exe
+          - os: windows-latest
+            goos: windows
+            goarch: arm64
+            output: SafePaste-windows-arm64.exe
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            output: SafePaste-linux-amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+            output: SafePaste-macos-amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+            output: SafePaste-macos-arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            go build -ldflags="-H windowsgui -s -w" -o ${{ matrix.output }} .
+          else
+            go build -ldflags="-s -w" -o ${{ matrix.output }} .
+          fi
+        shell: bash
+
+      - name: Create release package
+        run: |
+          mkdir -p release
+          cp ${{ matrix.output }} release/
+          cp config.json release/
+          cp LICENSE release/ || true
+          cp README.md release/ || true
+        shell: bash
+
+      - name: Create archive (Windows)
+        if: matrix.goos == 'windows'
+        run: |
+          cd release
+          7z a ../SafePaste-${{ matrix.goos }}-${{ matrix.goarch }}.zip *
+        shell: bash
+
+      - name: Create archive (Unix)
+        if: matrix.goos != 'windows'
+        run: |
+          cd release
+          tar -czf ../SafePaste-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz *
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SafePaste-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            SafePaste-*.zip
+            SafePaste-*.tar.gz
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure
+        run: ls -R artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/**/*.zip
+            artifacts/**/*.tar.gz
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') || contains(github.ref, 'pre') }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
