@@ -6,6 +6,9 @@ on:
       - 'v*' # v1.0.0, v1.1.0 gibi tag'lerde çalışır
   workflow_dispatch: # Manuel olarak da çalıştırabilirsin
 
+permissions:
+  contents: write  # Release oluşturma yetkisi
+
 jobs:
   build:
     name: Build SafePaste
