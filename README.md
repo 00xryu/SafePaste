@@ -1,52 +1,52 @@
 # SafePaste
 
-🔒 Hassas bilgileri (IP adresleri, hostname'ler, şifreler) loglardan güvenli bir şekilde maskeleyip paylaşmanızı sağlayan portable GUI uygulaması.
+🔒 A portable GUI application that safely masks sensitive information (IP addresses, hostnames, passwords) from logs before sharing.
 
 ![SafePaste](https://img.shields.io/badge/Go-1.24-00ADD8?style=flat&logo=go)
 ![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
 
-## ✨ Özellikler
+## ✨ Features
 
-- 🎨 **Modern GUI** - Gio UI ile yapılmış kullanıcı dostu arayüz
-- 🔒 **Otomatik Maskeleme** - IP adresleri, hostname'ler ve özel keyword'leri maskeler
-- 📋 **Kolay Paylaşım** - Maskelenmiş metni tek tıkla kopyala
-- 🚀 **Portable** - Kurulum gerektirmez, USB'den bile çalıştırabilirsiniz
-- ⚙️ **Özelleştirilebilir** - config.json ile kuralları kendiniz belirleyin
-- 📜 **Sınırsız** - Büyük log dosyaları için scroll desteği
+- 🎨 **Modern GUI** - User-friendly interface built with Gio UI
+- 🔒 **Automatic Masking** - Masks IP addresses, hostnames, and custom keywords
+- 📋 **Easy Sharing** - Copy masked text with one click
+- 🚀 **Portable** - No installation required, run from USB
+- ⚙️ **Customizable** - Define your own rules via config.json
+- 📜 **Unlimited** - Scroll support for large log files
 
-## 📦 İndirme
+## 📦 Download
 
-[Releases](https://github.com/00xryu/SafePaste/releases) sayfasından işletim sisteminize uygun versiyonu indirin:
+Download the appropriate version for your operating system from the [Releases](https://github.com/00xryu/SafePaste/releases) page:
 
 - **Windows (x64)**: `SafePaste-windows-amd64.zip`
 - **Linux (x64)**: `SafePaste-linux-amd64.tar.gz`
 
-## 🚀 Kullanım
+## 🚀 Usage
 
 ### Windows
-1. ZIP dosyasını indirin ve çıkarın
-2. `SafePaste.exe`'yi çalıştırın
-3. Sol panele metninizi yapıştırın
-4. "Maskele" butonuna basın
-5. Sağ panelden maskelenmiş metni kopyalayın
+1. Download and extract the ZIP file
+2. Run `SafePaste.exe`
+3. Paste your text in the left panel
+4. Click the "Mask" button
+5. Copy the masked text from the right panel
 
-### Linux/macOS
+### Linux
 ```bash
-# Arşivi çıkar
+# Extract archive
 tar -xzf SafePaste-*.tar.gz
 cd SafePaste
 
-# Çalıştırılabilir yap (sadece ilk seferde)
+# Make executable (first time only)
 chmod +x SafePaste-*
 
-# Çalıştır
+# Run
 ./SafePaste-*
 ```
 
-## ⚙️ Yapılandırma
+## ⚙️ Configuration
 
-`config.json` dosyasını düzenleyerek maskeleme kurallarını özelleştirebilirsiniz:
+Customize masking rules by editing the `config.json` file:
 
 ```json
 {
@@ -55,63 +55,63 @@ chmod +x SafePaste-*
 }
 ```
 
-- **keywords**: Maskelenecek özel kelimeler (büyük/küçük harf duyarlı)
-- **hostname_pattern**: Hostname'leri tanımak için regex deseni
+- **keywords**: Custom words to mask (case-sensitive)
+- **hostname_pattern**: Regex pattern to identify hostnames
 
-### Örnek Kullanım
+### Example Usage
 
-**Giriş:**
+**Input:**
 ```
-Bu log dosyasında password: Abc123! var. 
-Sunucu xy123abc456prd adresinde çalışıyor ve 192.168.1.100 IP'sinden bağlanıyor.
-```
-
-**Çıkış:**
-```
-Bu log dosyasında kw1: Abc123! var. 
-Sunucu hostname1 adresinde çalışıyor ve ip1 IP'sinden bağlanıyor.
+This log file contains password: Abc123!
+Server xy123abc456prd is running and connecting from 192.168.1.100.
 ```
 
-## 🛠️ Geliştirme
+**Output:**
+```
+This log file contains kw1: Abc123!
+Server hostname1 is running and connecting from ip1.
+```
 
-### Gereksinimler
+## 🛠️ Development
+
+### Requirements
 - Go 1.24+
-- Gio UI bağımlılıkları
+- Gio UI dependencies
 
 ### Build
 ```bash
-# Bağımlılıkları indir
+# Download dependencies
 go mod download
 
-# Çalıştır (development)
+# Run (development)
 go run .
 
 # Build (production)
 go build -ldflags="-H windowsgui -s -w" -o SafePaste.exe .
 ```
 
-### GitHub Actions ile Otomatik Release
+### Automated Releases with GitHub Actions
 
-1. Kodu GitHub'a push'la
-2. Tag oluştur ve push'la:
+1. Push your code to GitHub
+2. Create and push a tag:
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
-3. GitHub Actions otomatik olarak tüm platformlar için build yapıp release oluşturur!
+3. GitHub Actions automatically builds for all platforms and creates a release!
 
-## 📝 Lisans
+## 📝 License
 
-MIT License - Detaylar için [LICENSE](LICENSE) dosyasına bakın.
+GPL-3.0 License - See [LICENSE](LICENSE) file for details.
 
-## 🤝 Katkıda Bulunma
+## 🤝 Contributing
 
-Pull request'ler hoş karşılanır! Büyük değişiklikler için lütfen önce bir issue açın.
+Pull requests are welcome! For major changes, please open an issue first.
 
-## 💬 Destek
+## 💬 Support
 
-Sorun mu yaşıyorsunuz? [Issue açın](https://github.com/00xryu/SafePaste/issues) veya PR gönderin!
+Having issues? [Open an issue](https://github.com/00xryu/SafePaste/issues) or submit a PR!
 
 ---
 
-⭐ Projeyi beğendiyseniz yıldız vermeyi unutmayın!
+⭐ Star the project if you like it!

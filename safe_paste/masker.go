@@ -33,7 +33,7 @@ func loadConfig() Config {
 	configPath := getConfigPath()
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		fmt.Println("Config yüklenemedi:", configPath)
+		fmt.Println("Failed to load config:", configPath)
 		return Config{
 			Keywords:        []string{},
 			HostnamePattern: "\\bxy\\d+[a-z]+\\d*prd\\b",
@@ -54,16 +54,7 @@ func MaskText(input string) string {
 
 	ipCounter, hostnameCounter, keywordCounter := 1, 1, 1
 
-	// Keywords replace
-	for _, kw := range cfg.Keywords {
-		if keywordMap[kw] == "" {
-			keywordMap[kw] = fmt.Sprintf("kw%d", keywordCounter)
-			keywordCounter++
-		}
-		input = strings.ReplaceAll(input, kw, keywordMap[kw])
-	}
-
-	// IPs replace
+	// IPs replace (do this first to avoid conflicts)
 	ips := ipRegex.FindAllString(input, -1)
 	for _, ip := range ips {
 		skip := false
@@ -91,6 +82,15 @@ func MaskText(input string) string {
 			hostnameCounter++
 		}
 		input = strings.ReplaceAll(input, hn, hostnameMap[hn])
+	}
+
+	// Keywords replace (do this last to catch remaining sensitive words)
+	for _, kw := range cfg.Keywords {
+		if keywordMap[kw] == "" {
+			keywordMap[kw] = fmt.Sprintf("kw%d", keywordCounter)
+			keywordCounter++
+		}
+		input = strings.ReplaceAll(input, kw, keywordMap[kw])
 	}
 
 	return input

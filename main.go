@@ -36,7 +36,7 @@ func run(window *app.Window) error {
 	th := material.NewTheme()
 	var ops op.Ops
 
-	// Widget'lar
+	// Widgets
 	var inputEditor widget.Editor
 	inputEditor.SingleLine = false
 	inputEditor.Submit = true
@@ -57,87 +57,119 @@ func run(window *app.Window) error {
 		case app.FrameEvent:
 			gtx := app.NewContext(&ops, e)
 
-			// Ana layout - tüm içeriği padding ile çevrele
+			// Main layout with padding
 			layout.Inset{
 				Top:    unit.Dp(20),
 				Bottom: unit.Dp(20),
 				Left:   unit.Dp(20),
 				Right:  unit.Dp(20),
 			}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-				return layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceBetween}.Layout(gtx,
-					// Başlık
-					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						title := material.H5(th, "Orijinal Text")
-						return layout.Inset{Bottom: unit.Dp(10)}.Layout(gtx, title.Layout)
-					}),
-					// Input editor
-					layout.Flexed(0.35, func(gtx layout.Context) layout.Dimensions {
-						ed := material.Editor(th, &inputEditor, "Metni buraya yapıştır...")
-						ed.TextSize = unit.Sp(14)
-						return layout.UniformInset(unit.Dp(8)).Layout(gtx, ed.Layout)
-					}),
-					// Boşluk
-					layout.Rigid(layout.Spacer{Height: unit.Dp(20)}.Layout),
-					// Butonlar
-					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceBetween}.Layout(gtx,
-							layout.Flexed(0.33, func(gtx layout.Context) layout.Dimensions {
-								if maskButton.Clicked(gtx) {
-									input := inputEditor.Text()
-									log.Println("Input text:", input)
-									masked := sp.MaskText(input)
-									log.Println("Output text:", masked)
-									outputEditor.SetText(masked)
-								}
-								btn := material.Button(th, &maskButton, "Maskele")
-								return layout.Inset{Right: unit.Dp(8)}.Layout(gtx, btn.Layout)
+				// Horizontal layout: Left panel | Buttons | Right panel
+				return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceAround}.Layout(gtx,
+					// Left panel - Original text
+					layout.Flexed(0.45, func(gtx layout.Context) layout.Dimensions {
+						return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+							// Title
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+								title := material.H6(th, "Original")
+								return layout.Inset{Bottom: unit.Dp(10)}.Layout(gtx, title.Layout)
 							}),
-							layout.Flexed(0.33, func(gtx layout.Context) layout.Dimensions {
-								if copyButton.Clicked(gtx) {
-									text := outputEditor.Text()
-									log.Println("Copying text:", text)
-									if runtime.GOOS == "windows" {
-										cmd := exec.Command("cmd", "/c", "echo "+text+" | clip")
-										cmd.Run()
-									} else {
-										cmd := exec.Command("xclip", "-selection", "clipboard")
-										cmd.Stdin = strings.NewReader(text)
-										cmd.Run()
-									}
+							// Input editor with border
+							layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+								// Border using background
+								border := widget.Border{
+									Color:        material.NewTheme().Palette.Fg,
+									CornerRadius: unit.Dp(8),
+									Width:        unit.Dp(1),
 								}
-								btn := material.Button(th, &copyButton, "Kopyala")
-								return layout.Inset{Left: unit.Dp(4), Right: unit.Dp(4)}.Layout(gtx, btn.Layout)
-							}),
-							layout.Flexed(0.33, func(gtx layout.Context) layout.Dimensions {
-								if settingsButton.Clicked(gtx) {
-									// Config dosyasının yolunu bul (exe ile aynı dizinde)
-									exePath, _ := os.Executable()
-									exeDir := filepath.Dir(exePath)
-									configPath := filepath.Join(exeDir, "config.json")
-
-									if runtime.GOOS == "windows" {
-										exec.Command("notepad.exe", configPath).Start()
-									} else {
-										exec.Command("xdg-open", configPath).Start()
-									}
-								}
-								btn := material.Button(th, &settingsButton, "Ayarlar")
-								return layout.Inset{Left: unit.Dp(8)}.Layout(gtx, btn.Layout)
+								return border.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+									ed := material.Editor(th, &inputEditor, "Paste your text here...")
+									ed.TextSize = unit.Sp(14)
+									return layout.UniformInset(unit.Dp(8)).Layout(gtx, ed.Layout)
+								})
 							}),
 						)
 					}),
-					// Boşluk
-					layout.Rigid(layout.Spacer{Height: unit.Dp(20)}.Layout),
-					// Başlık
+					// Center - Buttons (vertical)
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						title := material.H5(th, "Maskelenmiş Text")
-						return layout.Inset{Bottom: unit.Dp(10)}.Layout(gtx, title.Layout)
+						return layout.Inset{Left: unit.Dp(20), Right: unit.Dp(20)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+							return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
+								// Spacer to center buttons vertically
+								layout.Flexed(1, layout.Spacer{}.Layout),
+								// Mask button
+								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+									if maskButton.Clicked(gtx) {
+										input := inputEditor.Text()
+										log.Println("Input text:", input)
+										masked := sp.MaskText(input)
+										log.Println("Output text:", masked)
+										outputEditor.SetText(masked)
+									}
+									btn := material.Button(th, &maskButton, "Mask")
+									return layout.Inset{Bottom: unit.Dp(10)}.Layout(gtx, btn.Layout)
+								}),
+								// Copy button
+								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+									if copyButton.Clicked(gtx) {
+										text := outputEditor.Text()
+										log.Println("Copying text:", text)
+										if runtime.GOOS == "windows" {
+											cmd := exec.Command("cmd", "/c", "echo "+text+" | clip")
+											cmd.Run()
+										} else {
+											cmd := exec.Command("xclip", "-selection", "clipboard")
+											cmd.Stdin = strings.NewReader(text)
+											cmd.Run()
+										}
+									}
+									btn := material.Button(th, &copyButton, "Copy")
+									return layout.Inset{Bottom: unit.Dp(10)}.Layout(gtx, btn.Layout)
+								}),
+								// Settings button
+								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+									if settingsButton.Clicked(gtx) {
+										// Find config file path (in same directory as exe)
+										exePath, _ := os.Executable()
+										exeDir := filepath.Dir(exePath)
+										configPath := filepath.Join(exeDir, "config.json")
+
+										if runtime.GOOS == "windows" {
+											exec.Command("notepad.exe", configPath).Start()
+										} else {
+											exec.Command("xdg-open", configPath).Start()
+										}
+									}
+									btn := material.Button(th, &settingsButton, "Settings")
+									return btn.Layout(gtx)
+								}),
+								// Spacer to center buttons vertically
+								layout.Flexed(1, layout.Spacer{}.Layout),
+							)
+						})
 					}),
-					// Output editor
-					layout.Flexed(0.35, func(gtx layout.Context) layout.Dimensions {
-						ed := material.Editor(th, &outputEditor, "")
-						ed.TextSize = unit.Sp(14)
-						return layout.UniformInset(unit.Dp(8)).Layout(gtx, ed.Layout)
+					// Right panel - Masked text
+					layout.Flexed(0.45, func(gtx layout.Context) layout.Dimensions {
+						return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+							// Title
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+								title := material.H6(th, "Output")
+								return layout.Inset{Bottom: unit.Dp(10)}.Layout(gtx, title.Layout)
+							}),
+							// Output editor with border
+							layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+								// Border using background
+								border := widget.Border{
+									Color:        material.NewTheme().Palette.Fg,
+									CornerRadius: unit.Dp(8),
+									Width:        unit.Dp(1),
+								}
+								return border.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+									ed := material.Editor(th, &outputEditor, "")
+									ed.TextSize = unit.Sp(14)
+									return layout.UniformInset(unit.Dp(8)).Layout(gtx, ed.Layout)
+								})
+							}),
+						)
 					}),
 				)
 			})
