@@ -3,7 +3,7 @@
 🔒 Hassas bilgileri (IP adresleri, hostname'ler, şifreler) loglardan güvenli bir şekilde maskeleyip paylaşmanızı sağlayan portable GUI uygulaması.
 
 ![SafePaste](https://img.shields.io/badge/Go-1.24-00ADD8?style=flat&logo=go)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
 
 ## ✨ Özellikler
