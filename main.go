@@ -22,7 +22,7 @@ func main() {
 	go func() {
 		window := new(app.Window)
 		window.Option(app.Title("SafePaste"))
-		window.Option(app.Size(unit.Dp(800), unit.Dp(600)))
+		window.Option(app.Size(unit.Dp(1200), unit.Dp(800)))
 		err := run(window)
 		if err != nil {
 			log.Fatal(err)
@@ -45,9 +45,22 @@ func run(window *app.Window) error {
 	outputEditor.ReadOnly = true
 	outputEditor.SingleLine = false
 
+	var aiInputEditor widget.Editor
+	aiInputEditor.SingleLine = false
+	aiInputEditor.Submit = true
+
+	var aiOutputEditor widget.Editor
+	aiOutputEditor.ReadOnly = true
+	aiOutputEditor.SingleLine = false
+
 	var maskButton widget.Clickable
-	var copyButton widget.Clickable
+	var unmaskButton widget.Clickable
+	var copyMaskedButton widget.Clickable
+	var copyUnmaskedButton widget.Clickable
 	var settingsButton widget.Clickable
+
+	// Store mapping for unmasking
+	var currentMapping map[string]string
 
 	for {
 		e := window.Event()
@@ -64,110 +77,176 @@ func run(window *app.Window) error {
 				Left:   unit.Dp(20),
 				Right:  unit.Dp(20),
 			}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-				// Horizontal layout: Left panel | Buttons | Right panel
-				return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceAround}.Layout(gtx,
-					// Left panel - Original text
-					layout.Flexed(0.45, func(gtx layout.Context) layout.Dimensions {
-						return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-							// Title
-							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-								title := material.H6(th, "Original")
-								return layout.Inset{Bottom: unit.Dp(10)}.Layout(gtx, title.Layout)
+				// Vertical layout: Top row | Bottom row
+				return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+					// Top row - Original & Masked
+					layout.Flexed(0.48, func(gtx layout.Context) layout.Dimensions {
+						return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+							// Top-Left: Original text
+							layout.Flexed(0.48, func(gtx layout.Context) layout.Dimensions {
+								return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+									layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+										title := material.H6(th, "Original")
+										return layout.Inset{Bottom: unit.Dp(8)}.Layout(gtx, title.Layout)
+									}),
+									layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+										border := widget.Border{
+											Color:        material.NewTheme().Palette.Fg,
+											CornerRadius: unit.Dp(8),
+											Width:        unit.Dp(1),
+										}
+										return border.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+											ed := material.Editor(th, &inputEditor, "Paste your text here...")
+											ed.TextSize = unit.Sp(14)
+											return layout.UniformInset(unit.Dp(8)).Layout(gtx, ed.Layout)
+										})
+									}),
+								)
 							}),
-							// Input editor with border
-							layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-								// Border using background
-								border := widget.Border{
-									Color:        material.NewTheme().Palette.Fg,
-									CornerRadius: unit.Dp(8),
-									Width:        unit.Dp(1),
-								}
-								return border.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-									ed := material.Editor(th, &inputEditor, "Paste your text here...")
-									ed.TextSize = unit.Sp(14)
-									return layout.UniformInset(unit.Dp(8)).Layout(gtx, ed.Layout)
+							// Center buttons for top row
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+								return layout.Inset{Left: unit.Dp(10), Right: unit.Dp(10)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+									return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
+										layout.Flexed(1, layout.Spacer{}.Layout),
+										layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+											if maskButton.Clicked(gtx) {
+												input := inputEditor.Text()
+												result := sp.MaskTextWithMapping(input)
+												outputEditor.SetText(result.MaskedText)
+												currentMapping = result.Mapping
+												log.Println("Masked. Mapping size:", len(currentMapping))
+											}
+											btn := material.Button(th, &maskButton, "Mask →")
+											return layout.Inset{Bottom: unit.Dp(8)}.Layout(gtx, btn.Layout)
+										}),
+										layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+											if copyMaskedButton.Clicked(gtx) {
+												text := outputEditor.Text()
+												copyToClipboard(text)
+												log.Println("Copied masked text")
+											}
+											btn := material.Button(th, &copyMaskedButton, "Copy")
+											return btn.Layout(gtx)
+										}),
+										layout.Flexed(1, layout.Spacer{}.Layout),
+									)
 								})
+							}),
+							// Top-Right: Masked text
+							layout.Flexed(0.48, func(gtx layout.Context) layout.Dimensions {
+								return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+									layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+										title := material.H6(th, "Masked")
+										return layout.Inset{Bottom: unit.Dp(8)}.Layout(gtx, title.Layout)
+									}),
+									layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+										border := widget.Border{
+											Color:        material.NewTheme().Palette.Fg,
+											CornerRadius: unit.Dp(8),
+											Width:        unit.Dp(1),
+										}
+										return border.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+											ed := material.Editor(th, &outputEditor, "")
+											ed.TextSize = unit.Sp(14)
+											return layout.UniformInset(unit.Dp(8)).Layout(gtx, ed.Layout)
+										})
+									}),
+								)
 							}),
 						)
 					}),
-					// Center - Buttons (vertical)
-					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						return layout.Inset{Left: unit.Dp(20), Right: unit.Dp(20)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-							return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
-								// Spacer to center buttons vertically
-								layout.Flexed(1, layout.Spacer{}.Layout),
-								// Mask button
-								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-									if maskButton.Clicked(gtx) {
-										input := inputEditor.Text()
-										log.Println("Input text:", input)
-										masked := sp.MaskText(input)
-										log.Println("Output text:", masked)
-										outputEditor.SetText(masked)
-									}
-									btn := material.Button(th, &maskButton, "Mask")
-									return layout.Inset{Bottom: unit.Dp(10)}.Layout(gtx, btn.Layout)
-								}),
-								// Copy button
-								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-									if copyButton.Clicked(gtx) {
-										text := outputEditor.Text()
-										log.Println("Copying text:", text)
-										if runtime.GOOS == "windows" {
-											cmd := exec.Command("cmd", "/c", "echo "+text+" | clip")
-											cmd.Run()
-										} else {
-											cmd := exec.Command("xclip", "-selection", "clipboard")
-											cmd.Stdin = strings.NewReader(text)
-											cmd.Run()
+					// Middle spacing
+					layout.Rigid(layout.Spacer{Height: unit.Dp(20)}.Layout),
+					// Bottom row - AI Input & Unmasked
+					layout.Flexed(0.48, func(gtx layout.Context) layout.Dimensions {
+						return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+							// Bottom-Left: AI response (to unmask)
+							layout.Flexed(0.48, func(gtx layout.Context) layout.Dimensions {
+								return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+									layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+										title := material.H6(th, "AI Response")
+										return layout.Inset{Bottom: unit.Dp(8)}.Layout(gtx, title.Layout)
+									}),
+									layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+										border := widget.Border{
+											Color:        material.NewTheme().Palette.Fg,
+											CornerRadius: unit.Dp(8),
+											Width:        unit.Dp(1),
 										}
-									}
-									btn := material.Button(th, &copyButton, "Copy")
-									return layout.Inset{Bottom: unit.Dp(10)}.Layout(gtx, btn.Layout)
-								}),
-								// Settings button
-								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-									if settingsButton.Clicked(gtx) {
-										// Find config file path (in same directory as exe)
-										exePath, _ := os.Executable()
-										exeDir := filepath.Dir(exePath)
-										configPath := filepath.Join(exeDir, "config.json")
-
-										if runtime.GOOS == "windows" {
-											exec.Command("notepad.exe", configPath).Start()
-										} else {
-											exec.Command("xdg-open", configPath).Start()
-										}
-									}
-									btn := material.Button(th, &settingsButton, "Settings")
-									return btn.Layout(gtx)
-								}),
-								// Spacer to center buttons vertically
-								layout.Flexed(1, layout.Spacer{}.Layout),
-							)
-						})
-					}),
-					// Right panel - Masked text
-					layout.Flexed(0.45, func(gtx layout.Context) layout.Dimensions {
-						return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-							// Title
-							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-								title := material.H6(th, "Output")
-								return layout.Inset{Bottom: unit.Dp(10)}.Layout(gtx, title.Layout)
+										return border.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+											ed := material.Editor(th, &aiInputEditor, "Paste AI response here...")
+											ed.TextSize = unit.Sp(14)
+											return layout.UniformInset(unit.Dp(8)).Layout(gtx, ed.Layout)
+										})
+									}),
+								)
 							}),
-							// Output editor with border
-							layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-								// Border using background
-								border := widget.Border{
-									Color:        material.NewTheme().Palette.Fg,
-									CornerRadius: unit.Dp(8),
-									Width:        unit.Dp(1),
-								}
-								return border.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-									ed := material.Editor(th, &outputEditor, "")
-									ed.TextSize = unit.Sp(14)
-									return layout.UniformInset(unit.Dp(8)).Layout(gtx, ed.Layout)
+							// Center buttons for bottom row
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+								return layout.Inset{Left: unit.Dp(10), Right: unit.Dp(10)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+									return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
+										layout.Flexed(1, layout.Spacer{}.Layout),
+										layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+											if unmaskButton.Clicked(gtx) {
+												aiInput := aiInputEditor.Text()
+												if currentMapping != nil {
+													unmasked := sp.UnmaskText(aiInput, currentMapping)
+													aiOutputEditor.SetText(unmasked)
+													log.Println("Unmasked with", len(currentMapping), "mappings")
+												} else {
+													log.Println("No mapping available. Mask text first!")
+												}
+											}
+											btn := material.Button(th, &unmaskButton, "Unmask →")
+											return layout.Inset{Bottom: unit.Dp(8)}.Layout(gtx, btn.Layout)
+										}),
+										layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+											if copyUnmaskedButton.Clicked(gtx) {
+												text := aiOutputEditor.Text()
+												copyToClipboard(text)
+												log.Println("Copied unmasked text")
+											}
+											btn := material.Button(th, &copyUnmaskedButton, "Copy")
+											return layout.Inset{Bottom: unit.Dp(8)}.Layout(gtx, btn.Layout)
+										}),
+										layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+											if settingsButton.Clicked(gtx) {
+												exePath, _ := os.Executable()
+												exeDir := filepath.Dir(exePath)
+												configPath := filepath.Join(exeDir, "config.json")
+												if runtime.GOOS == "windows" {
+													exec.Command("notepad.exe", configPath).Start()
+												} else {
+													exec.Command("xdg-open", configPath).Start()
+												}
+											}
+											btn := material.Button(th, &settingsButton, "Settings")
+											return btn.Layout(gtx)
+										}),
+										layout.Flexed(1, layout.Spacer{}.Layout),
+									)
 								})
+							}),
+							// Bottom-Right: Unmasked result
+							layout.Flexed(0.48, func(gtx layout.Context) layout.Dimensions {
+								return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+									layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+										title := material.H6(th, "Unmasked")
+										return layout.Inset{Bottom: unit.Dp(8)}.Layout(gtx, title.Layout)
+									}),
+									layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+										border := widget.Border{
+											Color:        material.NewTheme().Palette.Fg,
+											CornerRadius: unit.Dp(8),
+											Width:        unit.Dp(1),
+										}
+										return border.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+											ed := material.Editor(th, &aiOutputEditor, "")
+											ed.TextSize = unit.Sp(14)
+											return layout.UniformInset(unit.Dp(8)).Layout(gtx, ed.Layout)
+										})
+									}),
+								)
 							}),
 						)
 					}),
@@ -176,5 +255,17 @@ func run(window *app.Window) error {
 
 			e.Frame(gtx.Ops)
 		}
+	}
+}
+
+// Helper function for clipboard
+func copyToClipboard(text string) {
+	if runtime.GOOS == "windows" {
+		cmd := exec.Command("cmd", "/c", "echo "+text+" | clip")
+		cmd.Run()
+	} else {
+		cmd := exec.Command("xclip", "-selection", "clipboard")
+		cmd.Stdin = strings.NewReader(text)
+		cmd.Run()
 	}
 }

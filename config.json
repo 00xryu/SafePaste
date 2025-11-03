@@ -1,4 +1,4 @@
 {
-  "keywords": ["Şirket_sifresi"],
+  "keywords": [],
   "hostname_pattern": "\\bxy\\d+[a-z]{3}\\d+prd\\b"
 }

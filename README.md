@@ -1,6 +1,6 @@
 # SafePaste
 
-🔒 A portable GUI application that safely masks sensitive information (IP addresses, hostnames, passwords) from logs before sharing.
+🔒 A portable GUI application that masks sensitive information (IP addresses, hostnames) from logs before sharing with AI or colleagues. Features smart unmask to restore original values after AI processing.
 
 ![SafePaste](https://img.shields.io/badge/Go-1.24-00ADD8?style=flat&logo=go)
 ![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)
@@ -8,11 +8,12 @@
 
 ## ✨ Features
 
-- 🎨 **Modern GUI** - User-friendly interface built with Gio UI
-- 🔒 **Automatic Masking** - Masks IP addresses, hostnames, and custom keywords
-- 📋 **Easy Sharing** - Copy masked text with one click
+- 🎨 **Modern GUI** - User-friendly 4-panel interface built with Gio UI
+- 🔒 **Automatic Masking** - Masks IP addresses and hostnames automatically
+- 🔄 **Smart Unmask** - Restore original values after AI processes your code
+- 📋 **Easy Sharing** - Copy masked/unmasked text with one click
 - 🚀 **Portable** - No installation required, run from USB
-- ⚙️ **Customizable** - Define your own rules via config.json
+- ⚙️ **Customizable** - Define your own hostname patterns and keywords via config.json
 - 📜 **Unlimited** - Scroll support for large log files
 
 ## 📦 Download
@@ -27,9 +28,11 @@ Download the appropriate version for your operating system from the [Releases](h
 ### Windows
 1. Download and extract the ZIP file
 2. Run `SafePaste.exe`
-3. Paste your text in the left panel
-4. Click the "Mask" button
-5. Copy the masked text from the right panel
+3. **Top-Left Panel**: Paste your sensitive text
+4. Click **"Mask →"** to create masked version (top-right)
+5. Copy masked text and share with AI/colleague
+6. **Bottom-Left Panel**: Paste AI's response
+7. Click **"Unmask →"** to restore original values (bottom-right)
 
 ### Linux
 ```bash
@@ -44,32 +47,52 @@ chmod +x SafePaste-*
 ./SafePaste-*
 ```
 
+## 🔄 Workflow Example
+
+**Step 1 - Mask sensitive data:**
+- Original (top-left): `Server 192.168.1.100 connecting to xy123abc456prd`
+- Masked (top-right): `Server ip1 connecting to hostname1`
+
+**Step 2 - Get AI help:**
+- Share masked version with AI
+- AI suggests: `Server ip1 connecting to hostname1 (add connection timeout)`
+
+**Step 3 - Unmask result:**
+- AI Response (bottom-left): `Server ip1 connecting to hostname1 (add connection timeout)`
+- Unmasked (bottom-right): `Server 192.168.1.100 connecting to xy123abc456prd (add connection timeout)`
+
 ## ⚙️ Configuration
 
 Customize masking rules by editing the `config.json` file:
 
 ```json
 {
-  "keywords": ["password", "secret", "token", "api_key"],
+  "keywords": [],
   "hostname_pattern": "\\bxy\\d+[a-z]+\\d*prd\\b"
 }
 ```
 
-- **keywords**: Custom words to mask (case-sensitive)
+- **keywords**: Custom words to mask (case-sensitive) - Add your own sensitive keywords if needed
 - **hostname_pattern**: Regex pattern to identify hostnames
 
-### Example Usage
+### Test Cases
 
-**Input:**
+**Test 1 - Multiple IPs:**
 ```
-This log file contains password: Abc123!
-Server xy123abc456prd is running and connecting from 192.168.1.100.
+Input:  Connect from 10.0.0.5 to 192.168.1.100
+Masked: Connect from ip1 to ip2
 ```
 
-**Output:**
+**Test 2 - Server Logs:**
 ```
-This log file contains kw1: Abc123!
-Server hostname1 is running and connecting from ip1.
+Input:  Server xy123abc456prd at 192.168.1.100 is running
+Masked: Server hostname1 at ip1 is running
+```
+
+**Test 3 - Network Config:**
+```
+Input:  Route 10.20.30.40 via xy456def789prd gateway 172.16.0.1
+Masked: Route ip1 via hostname1 gateway ip2
 ```
 
 ## 🛠️ Development

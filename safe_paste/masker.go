@@ -14,6 +14,12 @@ type Config struct {
 	HostnamePattern string   `json:"hostname_pattern"`
 }
 
+// MaskResult holds both the masked text and the mapping for unmasking
+type MaskResult struct {
+	MaskedText string
+	Mapping    map[string]string // masked -> original (e.g., "ip1" -> "192.168.1.100")
+}
+
 var (
 	ipRegex      = regexp.MustCompile(`\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b`)
 	localhostIPs = []string{"127.0.0.1", "localhost", "0.0.0.0", "::1"}
@@ -46,11 +52,18 @@ func loadConfig() Config {
 }
 
 func MaskText(input string) string {
+	result := MaskTextWithMapping(input)
+	return result.MaskedText
+}
+
+// MaskTextWithMapping returns both masked text and the mapping
+func MaskTextWithMapping(input string) MaskResult {
 	cfg := loadConfig()
 	hostnameRegex := regexp.MustCompile(cfg.HostnamePattern)
 	ipMap := make(map[string]string)
 	hostnameMap := make(map[string]string)
 	keywordMap := make(map[string]string)
+	reverseMapping := make(map[string]string) // masked -> original
 
 	ipCounter, hostnameCounter, keywordCounter := 1, 1, 1
 
@@ -68,7 +81,9 @@ func MaskText(input string) string {
 			continue
 		}
 		if ipMap[ip] == "" {
-			ipMap[ip] = fmt.Sprintf("ip%d", ipCounter)
+			masked := fmt.Sprintf("ip%d", ipCounter)
+			ipMap[ip] = masked
+			reverseMapping[masked] = ip
 			ipCounter++
 		}
 		input = strings.ReplaceAll(input, ip, ipMap[ip])
@@ -78,7 +93,9 @@ func MaskText(input string) string {
 	hostnames := hostnameRegex.FindAllString(input, -1)
 	for _, hn := range hostnames {
 		if hostnameMap[hn] == "" {
-			hostnameMap[hn] = fmt.Sprintf("hostname%d", hostnameCounter)
+			masked := fmt.Sprintf("hostname%d", hostnameCounter)
+			hostnameMap[hn] = masked
+			reverseMapping[masked] = hn
 			hostnameCounter++
 		}
 		input = strings.ReplaceAll(input, hn, hostnameMap[hn])
@@ -87,11 +104,27 @@ func MaskText(input string) string {
 	// Keywords replace (do this last to catch remaining sensitive words)
 	for _, kw := range cfg.Keywords {
 		if keywordMap[kw] == "" {
-			keywordMap[kw] = fmt.Sprintf("kw%d", keywordCounter)
+			masked := fmt.Sprintf("kw%d", keywordCounter)
+			keywordMap[kw] = masked
+			reverseMapping[masked] = kw
 			keywordCounter++
 		}
 		input = strings.ReplaceAll(input, kw, keywordMap[kw])
 	}
 
-	return input
+	return MaskResult{
+		MaskedText: input,
+		Mapping:    reverseMapping,
+	}
+}
+
+// UnmaskText replaces masked values (ip1, hostname1, kw1) with original values
+func UnmaskText(maskedText string, mapping map[string]string) string {
+	result := maskedText
+	// Replace in reverse order: keywords, hostnames, then IPs
+	// This ensures longer patterns are replaced first
+	for masked, original := range mapping {
+		result = strings.ReplaceAll(result, masked, original)
+	}
+	return result
 }
