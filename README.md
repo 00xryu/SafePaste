@@ -9,12 +9,44 @@
 ## ✨ Features
 
 - 🎨 **Modern GUI** - User-friendly 4-panel interface built with Gio UI
+- 🌓 **Dark/Light Mode** - Toggle between themes with a single click (saved automatically)
 - 🔒 **Automatic Masking** - Masks IP addresses and hostnames automatically
 - 🔄 **Smart Unmask** - Restore original values after AI processes your code
 - 📋 **Easy Sharing** - Copy masked/unmasked text with one click
+- 🧹 **Quick Clear** - Clear input/output fields easily
 - 🚀 **Portable** - No installation required, run from USB
 - ⚙️ **Customizable** - Define your own hostname patterns and keywords via config.json
 - 📜 **Unlimited** - Scroll support for large log files
+
+## 📸 Screenshots
+
+### Light Mode
+![Light Mode](assets/screenshot_light.png)
+*Clean and bright interface for day usage.*
+
+### Dark Mode
+![Dark Mode](assets/screenshot_dark.png)
+*Easy on the eyes for night coding sessions.*
+
+## 🧪 Example for Screenshots
+
+Use this text to generate the screenshots above:
+
+**Original Text:**
+```text
+Error: Connection timed out to database server at 192.168.1.50.
+Retry attempt 1/3 for host xy-db-prod-01.
+Legacy system 10.0.0.5 is unreachable.
+Please check firewall rules for xy-auth-service.
+```
+
+**Masked Output:**
+```text
+Error: Connection timed out to database server at ip1.
+Retry attempt 1/3 for host hostname1.
+Legacy system ip2 is unreachable.
+Please check firewall rules for hostname2.
+```
 
 ## 📦 Download
 
@@ -63,17 +95,19 @@ chmod +x SafePaste-*
 
 ## ⚙️ Configuration
 
-Customize masking rules by editing the `config.json` file:
+Customize masking rules and theme by editing the `config.json` file (or use the Settings button in the app):
 
 ```json
 {
   "keywords": [],
-  "hostname_pattern": "\\bxy\\d+[a-z]+\\d*prd\\b"
+  "hostname_pattern": "\\bxy-[a-z0-9.-]+\\b|\\bxy[a-z0-9-]+\\.(?:example\\.com|prod|prod\\.example)\\b",
+  "theme": "dark"
 }
 ```
 
-- **keywords**: Custom words to mask (case-sensitive) - Add your own sensitive keywords if needed
+- **keywords**: Custom words to mask (case-sensitive)
 - **hostname_pattern**: Regex pattern to identify hostnames
+- **theme**: "light" or "dark" (updated automatically when you toggle the theme)
 
 ### Test Cases
 
@@ -138,3 +172,21 @@ Having issues? [Open an issue](https://github.com/00xryu/SafePaste/issues) or su
 ---
 
 ⭐ Star the project if you like it!
+
+### Setting the Application Icon (Windows)
+
+`gioui.org` v0.9.0 does not support setting the window icon at runtime. To set the application icon, you need to embed it as a resource.
+
+1. Install `rsrc`:
+   ```bash
+   go install github.com/akavel/rsrc@latest
+   ```
+2. Generate `rsrc.syso`:
+   ```bash
+   rsrc -ico assets/safePaste.ico -o rsrc.syso
+   ```
+   (Note: You need to convert `assets/safePaste.png` to `.ico` format first)
+3. Build the application:
+   ```bash
+   go build -ldflags="-H windowsgui -s -w" -o SafePaste.exe .
+   ```

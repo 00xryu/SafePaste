@@ -1,4 +1,5 @@
 {
   "keywords": [],
-  "hostname_pattern": "\\bxy\\d+[a-z]{3}\\d+prd\\b"
+  "hostname_pattern": "\\bxy-[a-z0-9.-]+\\b|\\bxy[a-z0-9-]+\\.(?:example\\.com|prod|prod\\.example)\\b",
+  "theme": "dark"
 }
