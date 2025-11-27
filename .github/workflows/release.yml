@@ -84,6 +84,7 @@ jobs:
           path: |
             SafePaste-*.zip
             SafePaste-*.tar.gz
+            SafePaste-*.exe
 
   release:
     name: Create Release
@@ -109,6 +110,7 @@ jobs:
           files: |
             artifacts/**/*.zip
             artifacts/**/*.tar.gz
+            artifacts/**/*.exe
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') || contains(github.ref, 'pre') }}
           generate_release_notes: true
